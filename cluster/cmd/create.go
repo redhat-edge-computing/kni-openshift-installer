@@ -18,10 +18,11 @@ package cmd
 import (
 	"fmt"
 	"github.com/spf13/cobra"
-	"net/url"
-	"os/exec"
-	"path/filepath"
 	"k8s.io/klog"
+	"net/url"
+	"os"
+	"os/exec"
+	"strings"
 )
 
 // docker run --rm  -v $HOME/.aws:/root/.aws:Z quay.io/jcope/cluster create -site $SITE
@@ -46,31 +47,40 @@ to quickly create a Cobra application.`,
 		}
 		klog.Infof("starting create for site %q", site)
 
-
-		out, err := fetchRequirements(blueprintUrl)
+		err = fetchRequirements(blueprintUrl)
 		if err != nil {
-			panic(fmt.Errorf("failed to fetch kni requirementes: %s\n%v", out, err))
+			panic(fmt.Errorf("failed to fetch kni requirementes: %v", err))
 		}
-		klog.Infof("%v", out)
 
-		out, err = prepareManifests(site)
+		err = prepareManifests(site)
 		if err != nil {
-			panic(fmt.Errorf("failed to prepare kni manifests: %s\n%v", out, err))
+			panic(fmt.Errorf("failed to prepare kni manifests: %v", err))
 		}
-		klog.Infof("%v", out)
 	},
 }
 
-func fetchRequirements(blueprintUrl string) ([]byte, error) {
+func fetchRequirements(blueprintUrl string) error {
 	klog.Infof("fetching site requirements from %q'", blueprintUrl)
-	kniCmd := exec.Command("knictl", "fetch_requirements", blueprintUrl))
-	return kniCmd.CombinedOutput()
+	kniCmd := exec.Command("knictl", "fetch_requirements", blueprintUrl)
+	kniCmd.Stderr = os.Stderr
+	kniCmd.Stdout = os.Stdout
+	err := kniCmd.Start()
+	if err != nil {
+		return err
+	}
+	return kniCmd.Wait()
 }
 
-func prepareManifests(site string) ([]byte, error) {
+func prepareManifests(site string) error {
 	klog.Infof("preparing manifests for site %q'", site)
 	kniCmd := exec.Command("knictl", "prepare_manifests", site)
-	return kniCmd.CombinedOutput()
+	kniCmd.Stderr = os.Stderr
+	kniCmd.Stdout = os.Stdout
+	err := kniCmd.Start()
+	if err != nil {
+		return err
+	}
+	return kniCmd.Wait()
 }
 
 func parseSite(siteLocation string) (string, error) {
@@ -78,11 +88,13 @@ func parseSite(siteLocation string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to extract path from URL: %v", err)
 	}
-	pathList := filepath.SplitList(siteUrl.Path)
+	// trailing '/' break path splitting, trim them to be safe
+	siteUrl.Path = strings.Trim(siteUrl.Path, "/")
+	pathList := strings.Split(siteUrl.Path, "/")
 	if len(pathList) == 0 {
 		return "", fmt.Errorf("failed to extract site from path %q", siteUrl.Path)
 	}
-	return pathList[len(pathList) - 1], nil
+	return pathList[len(pathList)-1], nil
 }
 
 func init() {

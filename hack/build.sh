@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 ROOT="$(readlink -f $(dirname ${BASH_SOURCE})/../)"
 CODE_ROOT="$ROOT/cluster"
 BIN_DIR="$CODE_ROOT/bin"
