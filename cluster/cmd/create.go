@@ -16,13 +16,10 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
 	"github.com/spf13/cobra"
 	"k8s.io/klog"
-	"net/url"
 	"os"
 	"os/exec"
-	"strings"
 )
 
 // docker run --rm  -v $HOME/.aws:/root/.aws:Z quay.io/jcope/cluster create -site $SITE
@@ -41,27 +38,30 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		blueprintUrl := rootCmd.PersistentFlags().Lookup(FLAG_URL).Value.String()
-		site, err := parseSite(blueprintUrl)
-		if err != nil {
-			panic(fmt.Errorf("failed to parse site from URL: %v", err))
-		}
+		site := siteDomain // to avoid numerous references to a global var
 		klog.Infof("starting create for site %q", site)
 
-		err = fetchRequirements(blueprintUrl)
+		err := fetchRequirements(blueprintUrl)
 		if err != nil {
-			panic(fmt.Errorf("failed to fetch kni requirementes: %v", err))
+			klog.Fatalf("failed to fetch kni requirementes: %v", err)
 		}
 
 		err = prepareManifests(site)
 		if err != nil {
-			panic(fmt.Errorf("failed to prepare kni manifests: %v", err))
+			klog.Fatalf("failed to prepare kni manifests: %v", err)
+		}
+
+		err = deployCluster(site)
+		if err != nil {
+			klog.Fatalf("failed to deploy cluster: %v", err)
 		}
 	},
 }
 
 func fetchRequirements(blueprintUrl string) error {
-	klog.Infof("fetching site requirements from %q'", blueprintUrl)
+	klog.Infof("fetching site requirements")
 	kniCmd := exec.Command("knictl", "fetch_requirements", blueprintUrl)
+	klog.Infof("exec: %v", kniCmd.String())
 	kniCmd.Stderr = os.Stderr
 	kniCmd.Stdout = os.Stdout
 	err := kniCmd.Start()
@@ -72,8 +72,9 @@ func fetchRequirements(blueprintUrl string) error {
 }
 
 func prepareManifests(site string) error {
-	klog.Infof("preparing manifests for site %q'", site)
+	klog.Info("preparing manifests")
 	kniCmd := exec.Command("knictl", "prepare_manifests", site)
+	klog.Infof("exec: %v", kniCmd.String())
 	kniCmd.Stderr = os.Stderr
 	kniCmd.Stdout = os.Stdout
 	err := kniCmd.Start()
@@ -83,18 +84,17 @@ func prepareManifests(site string) error {
 	return kniCmd.Wait()
 }
 
-func parseSite(siteLocation string) (string, error) {
-	siteUrl, err := url.Parse(siteLocation)
+func deployCluster(site string) error {
+	klog.Infof("deploying cluster")
+	ocpInstallCmd := exec.Command(installerPath, "create", "cluster", "--log-level=debug", "--dir", manifestsPath)
+	klog.Infof("exec: %v", ocpInstallCmd.String())
+	ocpInstallCmd.Stdout = os.Stdout
+	ocpInstallCmd.Stderr = os.Stderr
+	err := ocpInstallCmd.Start()
 	if err != nil {
-		return "", fmt.Errorf("failed to extract path from URL: %v", err)
+		klog.Fatalf("failed to exec openshift create cluster %s: %v", siteDomain, err)
 	}
-	// trailing '/' break path splitting, trim them to be safe
-	siteUrl.Path = strings.Trim(siteUrl.Path, "/")
-	pathList := strings.Split(siteUrl.Path, "/")
-	if len(pathList) == 0 {
-		return "", fmt.Errorf("failed to extract site from path %q", siteUrl.Path)
-	}
-	return pathList[len(pathList)-1], nil
+	return ocpInstallCmd.Wait()
 }
 
 func init() {

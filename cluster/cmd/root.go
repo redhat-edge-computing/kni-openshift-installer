@@ -18,7 +18,11 @@ package cmd
 import (
 	"fmt"
 	"github.com/spf13/cobra"
+	"k8s.io/klog"
+	"net/url"
 	"os"
+	"path/filepath"
+	"strings"
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
@@ -53,14 +57,50 @@ func Execute() {
 const FLAG_URL = "url"
 const FLAG_DRYRUN = "dry-run"
 
+const kniRoot = "/root/.kni"
+
+var (
+	siteDomain       string
+	requirementsPath string
+	installerPath    string
+	manifestsPath    string
+	isDryRun         *bool // TODO implement dry run
+)
+
+var _ = isDryRun // short circuit unused var error until I get that implemented
+
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().String(FLAG_URL, "", "the URL (http, file, etc) containing the site blueprints")
-	rootCmd.PersistentFlags().Bool(FLAG_DRYRUN, false, "if true, only print the os commands")
+	sourceURL := rootCmd.PersistentFlags().String(FLAG_URL, "", "the URL (http, file, etc) containing the site blueprints")
+	isDryRun = rootCmd.PersistentFlags().Bool(FLAG_DRYRUN, false, "if true, only print the os commands")
 	if err := rootCmd.PersistentFlags().Parse(os.Args[1:]); err != nil {
-		panic(fmt.Errorf("flags error: %v", err))
+		klog.Fatalf("flags error: %v", err)
 	}
+
+	var err error
+	siteDomain, err = parseSite(*sourceURL)
+	if err != nil {
+		klog.Fatalf("could not parse site from url: %v", err)
+	}
+
+	requirementsPath = filepath.Join(kniRoot, siteDomain, "requirements")
+	installerPath = filepath.Join(requirementsPath, "openshift-install")
+	manifestsPath = filepath.Join(kniRoot, siteDomain, "final_manifests")
+}
+
+func parseSite(siteLocation string) (string, error) {
+	siteUrl, err := url.Parse(siteLocation)
+	if err != nil {
+		return "", fmt.Errorf("failed to extract path from URL: %v", err)
+	}
+	// trailing '/' break path splitting, trim them to be safe
+	siteUrl.Path = strings.Trim(siteUrl.Path, "/")
+	pathList := strings.Split(siteUrl.Path, "/")
+	if len(pathList) == 0 {
+		return "", fmt.Errorf("failed to extract site from path %q", siteUrl.Path)
+	}
+	return pathList[len(pathList)-1], nil
 }
 
 // initConfig reads in config file and ENV variables if set.
