@@ -7,16 +7,17 @@ CODE_ROOT="$ROOT/installer"
 
 BIN_DIR="$ROOT/bin"
 BUILD_TARGET="$BIN_DIR/installer"
+
 IMAGE_FILE="$ROOT/build/Dockerfile"
 IMAGE_TAG="quay.io/jcope/kni-install"
 
 go_build(){
   (
-    # set -x
+    set -x
     cd "$CODE_ROOT"
     echo "compiling package: $(pwd)/..."
     export GOOS=linux GOARCH=amd64
-    go build -a -o "$BIN_DIR" ./...
+    go build -o "$BIN_DIR/" ./...
   )
 }
 
