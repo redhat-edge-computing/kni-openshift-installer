@@ -22,5 +22,5 @@ ENV PLUGIN_FOLDER="/usr/bin/plugins/kustomize/plugin/kni.akraino.org/v1alpha1/si
 RUN mkdir -p "$PLUGIN_FOLDER"
 COPY --from=0 /opt/app-root/src/gerrit.akraino.org/kni/installer/plugins/kustomize/plugin/kni.akraino.org/v1alpha1/siteconfig/SiteConfig "$PLUGIN_FOLDER/"
 
-COPY ./cluster /usr/bin/cluster
-ENTRYPOINT ["cluster"]
+COPY ./kni-install /usr/bin/kni-install
+ENTRYPOINT ["kni-install"]

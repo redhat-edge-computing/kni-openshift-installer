@@ -3,31 +3,31 @@
 set -e
 
 ROOT="$(readlink -f $(dirname ${BASH_SOURCE})/../)"
-CODE_ROOT="$ROOT/cluster"
-BIN_DIR="$CODE_ROOT/bin"
-BUILD_TARGET="$BIN_DIR/cluster"
-IMAGE_DIR="$ROOT/build"
-IMAGE_TAG="quay.io/jcope/cluster"
+CODE_ROOT="$ROOT/installer"
+
+BIN_DIR="$ROOT/bin"
+BUILD_TARGET="$BIN_DIR/installer"
+IMAGE_FILE="$ROOT/build/Dockerfile"
+IMAGE_TAG="quay.io/jcope/kni-install"
 
 go_build(){
   (
     # set -x
-    cd "$CODE_ROOT" || exit 1
+    cd "$CODE_ROOT"
     echo "compiling package: $(pwd)/..."
     export GOOS=linux GOARCH=amd64
-    go build -a -o "$BIN_DIR" ./... || exit 2
+    go build -a -o "$BIN_DIR" ./...
   )
 }
 
 docker_build(){
   (
     # set -x
-    cd "$BUILD_DIR" || exit 3
-    echo "copying $IMAGE_TAG/Dockerfile => $BUILD_DIR"
-    cp "$IMAGE_DIR/Dockerfile" "$BUILD_DIR" || exit 4
+    echo "copying $IMAGE_FILE => $BUILD_DIR"
+    cp "$IMAGE_FILE" "$BUILD_DIR"
     echo "copying $BUILD_TARGET => $BUILD_DIR"
-    cp "$BUILD_TARGET" "$BUILD_DIR" || exit 5
-    docker build -t "$IMAGE_TAG" .
+    cp "$BUILD_TARGET" "$BUILD_DIR"
+    docker build -t "$IMAGE_TAG" "$BUILD_DIR"
   )
 }
 
