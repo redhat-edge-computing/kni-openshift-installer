@@ -16,34 +16,58 @@ limitations under the License.
 package cmd
 
 import (
+	"fmt"
 	"github.com/spf13/cobra"
 	"k8s.io/klog"
 	"os"
 	"os/exec"
 )
 
-// docker run --rm  -v $HOME/.aws:/root/.aws:Z quay.io/jcope/cluster create -site $SITE
+var (
+	createClusterCmd = &cobra.Command{
+		Use: "cluster",
+		Short: "",
+		Long: "",
+		Run: createCluster,
+		Args: cobra.ExactArgs(0),
+	}
 
-// createCmd represents the create command
-var createCmd = &cobra.Command{
-	Use:   "create",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	createIgnitionConfigsCmd = &cobra.Command{
+		Use:   "ignition-config",
+		Short: "",
+		Long:  "",
+		Run:   createIgnitionConfigs,
+		Args:  cobra.ExactArgs(0),
+	}
+)
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+func init() {
+	rootCmd.AddCommand(newCreateCmd())
+}
 
-	Run: func(cmd *cobra.Command, args []string) {
+func newCreateCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "create",
+		Short: "A brief description of your command",
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Help()
+		},
+	}
 
-		blueprintUrl := rootCmd.PersistentFlags().Lookup(FLAG_URL).Value.String()
+	cmd.AddCommand(createClusterCmd)
+	cmd.AddCommand(createIgnitionConfigsCmd)
+	return cmd
+}
+
+func createCluster(cmd *cobra.Command, args []string) {
+		blueprintUrl := cmd.PersistentFlags().Lookup(FLAG_URL).Value.String()
 		site := siteDomain // to avoid numerous references to a global var
 		klog.Infof("starting create for site %q", site)
 
 		err := fetchRequirements(blueprintUrl)
 		if err != nil {
-			klog.Fatalf("failed to fetch kni requirementes: %v", err)
+			klog.Fatalf("failed to fetch kni requirements: %v", err)
 		}
 
 		err = prepareManifests(site)
@@ -55,48 +79,34 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			klog.Fatalf("failed to deploy cluster: %v", err)
 		}
-	},
 }
 
 func fetchRequirements(blueprintUrl string) error {
 	klog.Infof("fetching site requirements")
-	kniCmd := exec.Command("knictl", "fetch_requirements", blueprintUrl)
-	klog.Infof("exec: %v", kniCmd.String())
-	kniCmd.Stderr = os.Stderr
-	kniCmd.Stdout = os.Stdout
-	err := kniCmd.Start()
-	if err != nil {
-		return err
-	}
-	return kniCmd.Wait()
+	return execCmdToStdout(exec.Command("knictl", "fetch_requirements", blueprintUrl))
 }
 
 func prepareManifests(site string) error {
 	klog.Info("preparing manifests")
-	kniCmd := exec.Command("knictl", "prepare_manifests", site)
-	klog.Infof("exec: %v", kniCmd.String())
-	kniCmd.Stderr = os.Stderr
-	kniCmd.Stdout = os.Stdout
-	err := kniCmd.Start()
-	if err != nil {
-		return err
-	}
-	return kniCmd.Wait()
+	return execCmdToStdout(exec.Command("knictl", "prepare_manifests", site))
 }
 
 func deployCluster(site string) error {
 	klog.Infof("deploying cluster")
-	ocpInstallCmd := exec.Command(installerPath, "create", "cluster", "--log-level=debug", "--dir", manifestsPath)
-	klog.Infof("exec: %v", ocpInstallCmd.String())
-	ocpInstallCmd.Stdout = os.Stdout
-	ocpInstallCmd.Stderr = os.Stderr
-	err := ocpInstallCmd.Start()
-	if err != nil {
-		klog.Fatalf("failed to exec openshift create cluster %s: %v", siteDomain, err)
-	}
-	return ocpInstallCmd.Wait()
+	return execCmdToStdout(exec.Command(installerPath, "create", "cluster", "--log-level=debug", "--dir", manifestsPath))
 }
 
-func init() {
-	rootCmd.AddCommand(createCmd)
+func execCmdToStdout(command *exec.Cmd) error {
+	command.Stdout = os.Stdout
+	command.Stderr = os.Stderr
+	err := command.Start()
+	if err != nil {
+		return fmt.Errorf("exec failed: %v", err)
+	}
+	return command.Wait()
+}
+
+// stub
+func createIgnitionConfigs(cmd *cobra.Command, args []string) {
+	return
 }

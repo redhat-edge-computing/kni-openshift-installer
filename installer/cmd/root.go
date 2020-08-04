@@ -54,20 +54,18 @@ func Execute() {
 	}
 }
 
-const FLAG_URL = "url"
-const FLAG_DRYRUN = "dry-run"
-
-const kniRoot = "/root/.kni"
-
 var (
+	installerPath    string
+	isDryRun         *bool // TODO implement dry run
+	manifestsPath    string
 	siteDomain       string
 	requirementsPath string
-	installerPath    string
-	manifestsPath    string
-	isDryRun         *bool // TODO implement dry run
 )
 
 var _ = isDryRun // short circuit unused var error until I get that implemented
+
+const FLAG_URL = "url"
+const FLAG_DRYRUN = "dry-run"
 
 func init() {
 	cobra.OnInitialize(initConfig)
@@ -82,6 +80,11 @@ func init() {
 	siteDomain, err = parseSite(*sourceURL)
 	if err != nil {
 		klog.Fatalf("could not parse site from url: %v", err)
+	}
+
+	kniRoot, err := os.UserHomeDir()
+	if err != nil {
+		klog.Fatalf("cannot find home dir: %v", err)
 	}
 
 	requirementsPath = filepath.Join(kniRoot, siteDomain, "requirements")
