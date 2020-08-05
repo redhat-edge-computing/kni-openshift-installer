@@ -17,8 +17,10 @@ package main
 
 import (
 	"github.com/copejon/blueprint-automation/installer/cmd"
+	"k8s.io/klog"
 )
 
 func main() {
+	defer klog.Flush()
 	cmd.Execute()
 }

@@ -18,14 +18,11 @@ package cmd
 import (
 	"fmt"
 	"github.com/spf13/cobra"
-	"k8s.io/klog"
-	"net/url"
-	"os"
-	"path/filepath"
-	"strings"
-
-	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
+	"k8s.io/klog"
+	"os"
+	"path"
+	"path/filepath"
 )
 
 var cfgFile string
@@ -40,9 +37,9 @@ examples and usage of using your application. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	//	Run: func(cmd *cobra.Command, args []string) { },
+	RunE: func(cmd *cobra.Command, _ []string) error {
+		return cmd.Help()
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -55,55 +52,34 @@ func Execute() {
 }
 
 var (
-	installerPath    string
-	isDryRun         *bool // TODO implement dry run
-	manifestsPath    string
-	siteDomain       string
-	requirementsPath string
+	isDryRun     bool // TODO implement dry run
+	logLvl       string
+	site         string
+	siteRepo     string
+	siteBuildDir string
+	ocpInstaller string
 )
 
 var _ = isDryRun // short circuit unused var error until I get that implemented
 
-const FLAG_URL = "url"
-const FLAG_DRYRUN = "dry-run"
-
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	sourceURL := rootCmd.PersistentFlags().String(FLAG_URL, "", "the URL (http, file, etc) containing the site blueprints")
-	isDryRun = rootCmd.PersistentFlags().Bool(FLAG_DRYRUN, false, "if true, only print the os commands")
-	if err := rootCmd.PersistentFlags().Parse(os.Args[1:]); err != nil {
-		klog.Fatalf("flags error: %v", err)
-	}
+	userHome, _ := os.UserHomeDir()
 
-	var err error
-	siteDomain, err = parseSite(*sourceURL)
+	kniRoot := rootCmd.PersistentFlags().String("kni-dir", filepath.Join(userHome, ".kni"), `(optional) Sets path to non-standard .kni path`)
+	rootCmd.PersistentFlags().StringVar(&siteRepo, "repo", "", `git repo path containing site config files`)
+	rootCmd.PersistentFlags().BoolVar(&isDryRun, "dry-run", false, `(optional) If true, prints, but does not execute OS commands.`)
+	rootCmd.PersistentFlags().StringVar(&logLvl, "log-level", "info", `Set log level of detail. Accepted input is one of: ["info", "debug"]`)
+	_ = rootCmd.PersistentFlags().Parse(os.Args[1:])
+
+	_, err := os.Stat(*kniRoot)
 	if err != nil {
-		klog.Fatalf("could not parse site from url: %v", err)
+		klog.Fatalf("stat failed for dir %q: %v", *kniRoot, err)
 	}
-
-	kniRoot, err := os.UserHomeDir()
-	if err != nil {
-		klog.Fatalf("cannot find home dir: %v", err)
-	}
-
-	requirementsPath = filepath.Join(kniRoot, siteDomain, "requirements")
-	installerPath = filepath.Join(requirementsPath, "openshift-install")
-	manifestsPath = filepath.Join(kniRoot, siteDomain, "final_manifests")
-}
-
-func parseSite(siteLocation string) (string, error) {
-	siteUrl, err := url.Parse(siteLocation)
-	if err != nil {
-		return "", fmt.Errorf("failed to extract path from URL: %v", err)
-	}
-	// trailing '/' break path splitting, trim them to be safe
-	siteUrl.Path = strings.Trim(siteUrl.Path, "/")
-	pathList := strings.Split(siteUrl.Path, "/")
-	if len(pathList) == 0 {
-		return "", fmt.Errorf("failed to extract site from path %q", siteUrl.Path)
-	}
-	return pathList[len(pathList)-1], nil
+	site = path.Base(siteRepo)
+	siteBuildDir = filepath.Join(*kniRoot, site, "final_manifests")
+	ocpInstaller = filepath.Join(*kniRoot, site, "requirements", "openshift-install")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -113,15 +89,15 @@ func initConfig() {
 		viper.SetConfigFile(cfgFile)
 	} else {
 		// Find home directory.
-		home, err := homedir.Dir()
+		home, err := os.UserHomeDir()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		// Search config in home directory with name ".installer" (without extension).
+		// Search config in home directory with name ".kni-openshift-installer" (without extension).
 		viper.AddConfigPath(home)
-		viper.SetConfigName(".installer")
+		viper.SetConfigName(".kni-openshift-installer")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match

@@ -24,79 +24,86 @@ import (
 )
 
 var (
-	createClusterCmd = &cobra.Command{
-		Use: "cluster",
-		Short: "",
-		Long: "",
-		Run: createCluster,
-		Args: cobra.ExactArgs(0),
-	}
-
-	createIgnitionConfigsCmd = &cobra.Command{
-		Use:   "ignition-config",
-		Short: "",
-		Long:  "",
-		Run:   createIgnitionConfigs,
-		Args:  cobra.ExactArgs(0),
-	}
-)
-
-func init() {
-	rootCmd.AddCommand(newCreateCmd())
-}
-
-func newCreateCmd() *cobra.Command {
-	cmd := &cobra.Command{
+	createCmd = &cobra.Command{
 		Use:   "create",
 		Short: "A brief description of your command",
-		Args: cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
 		},
 	}
 
-	cmd.AddCommand(createClusterCmd)
-	cmd.AddCommand(createIgnitionConfigsCmd)
-	return cmd
+	createClusterCmd = &cobra.Command{
+		Use:     "cluster",
+		Short:   "",
+		Long:    "",
+		Run:     createCluster,
+		Args:    cobra.ExactArgs(0),
+		PreRunE: initCreateCommand,
+	}
+
+	createIgnitionConfigsCmd = &cobra.Command{
+		Use:     "ignition-configs",
+		Short:   "",
+		Long:    "",
+		Run:     createIgnitionConfigs,
+		Args:    cobra.ExactArgs(0),
+		PreRunE: initCreateCommand,
+	}
+)
+
+func initCreateCommand(_ *cobra.Command, _ []string) error {
+	err := fetchRequirements()
+	if err != nil {
+		return err
+	}
+
+	err = prepareManifests()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func createCluster(cmd *cobra.Command, args []string) {
-		blueprintUrl := cmd.PersistentFlags().Lookup(FLAG_URL).Value.String()
-		site := siteDomain // to avoid numerous references to a global var
-		klog.Infof("starting create for site %q", site)
-
-		err := fetchRequirements(blueprintUrl)
-		if err != nil {
-			klog.Fatalf("failed to fetch kni requirements: %v", err)
-		}
-
-		err = prepareManifests(site)
-		if err != nil {
-			klog.Fatalf("failed to prepare kni manifests: %v", err)
-		}
-
-		err = deployCluster(site)
-		if err != nil {
-			klog.Fatalf("failed to deploy cluster: %v", err)
-		}
+func fetchRequirements() (err error) {
+	klog.Info("fetching site requirements")
+	err = execCmdToStdout(exec.Command("knictl", "fetch_requirements", siteRepo))
+	if err == nil {
+		klog.Info("done fetching requirements")
+	}
+	return
 }
 
-func fetchRequirements(blueprintUrl string) error {
-	klog.Infof("fetching site requirements")
-	return execCmdToStdout(exec.Command("knictl", "fetch_requirements", blueprintUrl))
-}
-
-func prepareManifests(site string) error {
+func prepareManifests() (err error) {
 	klog.Info("preparing manifests")
-	return execCmdToStdout(exec.Command("knictl", "prepare_manifests", site))
+	err = execCmdToStdout(exec.Command("knictl", "prepare_manifests", site))
+	if err == nil {
+		klog.Info("done preparing manifests")
+	}
+	return
 }
 
-func deployCluster(site string) error {
-	klog.Infof("deploying cluster")
-	return execCmdToStdout(exec.Command(installerPath, "create", "cluster", "--log-level=debug", "--dir", manifestsPath))
+func createCluster(cmd *cobra.Command, _ []string) {
+	klog.Info("deploy cluster")
+	err := execCmdToStdout(exec.Command(ocpInstaller, "create", "cluster", "--log-level", logLvl, "--dir", siteBuildDir))
+	if err != nil {
+		klog.Fatalf("failed to deploy cluster: %v", err)
+	}
+}
+
+func createIgnitionConfigs(cmd *cobra.Command, _ []string) {
+	klog.Info("creating ignition configs")
+	err := execCmdToStdout(exec.Command(ocpInstaller, "create", "ignition-configs", "--log-level", logLvl, "--dir", siteBuildDir))
+	if err != nil {
+		klog.Fatalf("exec error: %v", err)
+	}
 }
 
 func execCmdToStdout(command *exec.Cmd) error {
+	if isDryRun {
+		klog.Infof("dry-run exec: %s", command.String())
+		return nil
+	}
 	command.Stdout = os.Stdout
 	command.Stderr = os.Stderr
 	err := command.Start()
@@ -106,7 +113,8 @@ func execCmdToStdout(command *exec.Cmd) error {
 	return command.Wait()
 }
 
-// stub
-func createIgnitionConfigs(cmd *cobra.Command, args []string) {
-	return
+func init() {
+	createCmd.AddCommand(createClusterCmd)
+	createCmd.AddCommand(createIgnitionConfigsCmd)
+	rootCmd.AddCommand(createCmd)
 }

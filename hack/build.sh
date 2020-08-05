@@ -13,7 +13,7 @@ IMAGE_TAG="quay.io/jcope/kni-install"
 
 go_build(){
   (
-    set -x
+#    set -x
     cd "$CODE_ROOT"
     echo "compiling package: $(pwd)/..."
     export GOOS=linux GOARCH=amd64
@@ -23,7 +23,7 @@ go_build(){
 
 docker_build(){
   (
-    # set -x
+#     set -x
     echo "copying $IMAGE_FILE => $BUILD_DIR"
     cp "$IMAGE_FILE" "$BUILD_DIR"
     echo "copying $BUILD_TARGET => $BUILD_DIR"
