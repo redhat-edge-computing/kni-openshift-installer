@@ -3,7 +3,7 @@
 set -e
 
 ROOT="$(readlink -f $(dirname ${BASH_SOURCE})/../)"
-CODE_ROOT="$ROOT/installer"
+CODE_ROOT="$ROOT/kni-install"
 
 BIN_DIR="$ROOT/bin"
 BUILD_TARGET="$BIN_DIR/kni-install"
@@ -49,10 +49,11 @@ while [ ${#@} != 0 ]; do
       BUILD_IMAGE=1
       GOOS=linux
       GOARCH=amd64
-      shift
+      shift 1
       ;;
     "")
-      exit
+      shift 1
+      break
       ;;
     *)
       echo "unknown arg: $1"

@@ -29,7 +29,7 @@ var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "installer",
+	Use:   "kni-install",
 	Short: "A brief description of your application",
 	Long: `A longer description that spans multiple lines and likely contains
 examples and usage of using your application. For example:
@@ -95,7 +95,7 @@ func initConfig() {
 
 		// Search config in home directory with name ".kni-openshift-installer" (without extension).
 		viper.AddConfigPath(home)
-		viper.SetConfigName(".kni-openshift-installer")
+		viper.SetConfigName(".kni-openshift-kni-install")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match

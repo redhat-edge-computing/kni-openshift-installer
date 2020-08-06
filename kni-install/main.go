@@ -16,7 +16,7 @@ limitations under the License.
 package main
 
 import (
-	"github.com/copejon/blueprint-automation/installer/cmd"
+	"github.com/copejon/blueprint-automation/kni-install/cmd"
 	"k8s.io/klog"
 )
 
