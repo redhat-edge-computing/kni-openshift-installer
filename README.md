@@ -27,7 +27,7 @@ Like `knictl`, the `create` subcommand expects a GitHub path to the site directo
 
 It's necessary to inject credential files into the container.  The following assumes an AWS deployment, but you must substitute in the appropriate directory for your the cloud platform.
 
-`openshift-install` writes cluster metadata back to the filesystem for later use during `destroy`.  It is **very** important that you preserve the data in  `*/.kni`  if you don't want to tear down the cluster by hand.  This can be done easily by bind-mounting a directory from the host machine (as done in the commands below), or by creating a docker volume.  To create a docker volume, change the `src=$HOME/.kni` to `src=NameYourVolume` and the `type=bind` arg in the same list to `type=volume`.  Do not change the AWS --mount command.
+`openshift-install` writes cluster metadata back to the filesystem for later use during `destroy`.  It is **very** important that you preserve the data in  `*/.kni`  if you don't want to tear down the cluster by hand.  This can be done easily by bind-mounting a directory from the host machine (as done in the commands below), or by creating a docker volume.  To create a docker volume, change the `src=$HOME/.kni` to `src=NameYourVolume` and the `type=bind` arg in the same list to `type=volume`.  Do not change the AWS `--mount` command.
 
 Bind-mounted directories and credential files must exist on the host prior to use.
 
@@ -50,6 +50,8 @@ docker run --rm \
 --mount type=bind,src=$HOME/.kni,dst=/root/.kni 
 localhost/kni-install create cluster --repo github.com/path/to/site
 ```
+
+> To only deploy a bare cluster (and not apply workload manifests), use the `--bare-cluster`
 
 ##### *Or* Create Ignition Configs
 

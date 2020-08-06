@@ -92,9 +92,12 @@ func execCreateCmd(_ *cobra.Command, _ []string) error {
 	if err != nil {
 		return err
 	}
-	err = applyWorkloads()
-	if err != nil {
-		return err
+
+	if ! isBareCluster{
+		err = applyWorkloads()
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

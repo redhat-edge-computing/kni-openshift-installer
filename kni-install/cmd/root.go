@@ -53,6 +53,7 @@ func Execute() {
 
 var (
 	isDryRun     bool
+	isBareCluster  bool
 	logLvl       string
 	site         string
 	siteRepo     string
@@ -69,6 +70,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&siteRepo, "repo", "", `git repo path containing site config files`)
 	rootCmd.PersistentFlags().BoolVar(&isDryRun, "dry-run", false, `(optional) If true, prints, but does not execute OS commands.`)
 	rootCmd.PersistentFlags().StringVar(&logLvl, "log-level", "info", `Set log level of detail. Accepted input is one of: ["info", "debug"]`)
+	rootCmd.PersistentFlags().BoolVar(&isBareCluster, "bare-cluster", false, "when true, complete cluster deployment and stop, do no deploy workload.")
 	_ = rootCmd.PersistentFlags().Parse(os.Args[1:])
 
 	_, err := os.Stat(*kniRoot)
