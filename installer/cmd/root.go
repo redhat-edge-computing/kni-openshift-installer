@@ -52,15 +52,13 @@ func Execute() {
 }
 
 var (
-	isDryRun     bool // TODO implement dry run
+	isDryRun     bool
 	logLvl       string
 	site         string
 	siteRepo     string
 	siteBuildDir string
 	ocpInstaller string
 )
-
-var _ = isDryRun // short circuit unused var error until I get that implemented
 
 func init() {
 	cobra.OnInitialize(initConfig)

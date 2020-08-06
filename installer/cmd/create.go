@@ -37,7 +37,7 @@ var (
 		Use:     "cluster",
 		Short:   "",
 		Long:    "",
-		Run:     createCluster,
+		RunE:    execCreateCmd,
 		Args:    cobra.ExactArgs(0),
 		PreRunE: initCreateCommand,
 	}
@@ -46,7 +46,7 @@ var (
 		Use:     "ignition-configs",
 		Short:   "",
 		Long:    "",
-		Run:     createIgnitionConfigs,
+		Run:     execCreateIgnitionConfigsCmd,
 		Args:    cobra.ExactArgs(0),
 		PreRunE: initCreateCommand,
 	}
@@ -65,38 +65,65 @@ func initCreateCommand(_ *cobra.Command, _ []string) error {
 	return nil
 }
 
-func fetchRequirements() (err error) {
+func fetchRequirements() error {
 	klog.Info("fetching site requirements")
-	err = execCmdToStdout(exec.Command("knictl", "fetch_requirements", siteRepo))
-	if err == nil {
-		klog.Info("done fetching requirements")
-	}
-	return
-}
-
-func prepareManifests() (err error) {
-	klog.Info("preparing manifests")
-	err = execCmdToStdout(exec.Command("knictl", "prepare_manifests", site))
-	if err == nil {
-		klog.Info("done preparing manifests")
-	}
-	return
-}
-
-func createCluster(cmd *cobra.Command, _ []string) {
-	klog.Info("deploy cluster")
-	err := execCmdToStdout(exec.Command(ocpInstaller, "create", "cluster", "--log-level", logLvl, "--dir", siteBuildDir))
+	err := execCmdToStdout(exec.Command("knictl", "fetch_requirements", siteRepo))
 	if err != nil {
-		klog.Fatalf("failed to deploy cluster: %v", err)
+		return err
 	}
+	klog.Info("done fetching requirements")
+	return nil
 }
 
-func createIgnitionConfigs(cmd *cobra.Command, _ []string) {
-	klog.Info("creating ignition configs")
+func prepareManifests() error {
+	klog.Info("preparing manifests")
+	err := execCmdToStdout(exec.Command("knictl", "prepare_manifests", site))
+	if err != nil {
+		return err
+	}
+	klog.Info("done preparing manifests")
+	return nil
+}
+
+func execCreateCmd(_ *cobra.Command, _ []string) error {
+	err := createCluster()
+	if err != nil {
+		return err
+	}
+	err = applyWorkloads()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func createCluster() (err error) {
+	klog.Info("deploy cluster")
+	err = execCmdToStdout(exec.Command(ocpInstaller, "create", "cluster", "--log-level", logLvl, "--dir", siteBuildDir))
+	if err != nil {
+		return err
+	}
+	klog.Info("cluster deployment complete")
+	return nil
+}
+
+func applyWorkloads() (err error) {
+	klog.Info("applying workload manifests")
+	err = execCmdToStdout(exec.Command("knictl", "apply_workloads", site))
+	if err != nil {
+		return err
+	}
+	klog.Info("workload manifests deployed")
+	return nil
+}
+
+func execCreateIgnitionConfigsCmd(_ *cobra.Command, _ []string) {
+	klog.Info("creating ignition-configs")
 	err := execCmdToStdout(exec.Command(ocpInstaller, "create", "ignition-configs", "--log-level", logLvl, "--dir", siteBuildDir))
 	if err != nil {
 		klog.Fatalf("exec error: %v", err)
 	}
+	klog.Info("ignition-configs creation complete")
 }
 
 func execCmdToStdout(command *exec.Cmd) error {
