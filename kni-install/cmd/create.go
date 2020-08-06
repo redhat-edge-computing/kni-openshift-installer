@@ -71,7 +71,7 @@ func fetchRequirements() error {
 	klog.Info("fetching site requirements")
 	err := execCmdToStdout(exec.Command("knictl", "fetch_requirements", siteRepo))
 	if err != nil {
-		return err
+		return fmt.Errorf("fetching requirements failed: %v", err)
 	}
 	klog.Info("done fetching requirements")
 	return nil
@@ -81,7 +81,7 @@ func prepareManifests() error {
 	klog.Info("preparing manifests")
 	err := execCmdToStdout(exec.Command("knictl", "prepare_manifests", site))
 	if err != nil {
-		return err
+		return fmt.Errorf("manifest preparation failed: %v", err)
 	}
 	klog.Info("done preparing manifests")
 	return nil
@@ -103,7 +103,7 @@ func createCluster() (err error) {
 	klog.Info("deploy cluster")
 	err = execCmdToStdout(exec.Command(ocpInstaller, "create", "cluster", "--log-level", logLvl, "--dir", siteBuildDir))
 	if err != nil {
-		return err
+		return fmt.Errorf("cluster deployment failed: %v", err)
 	}
 	klog.Info("cluster deployment complete")
 	return nil
@@ -113,7 +113,7 @@ func applyWorkloads() (err error) {
 	klog.Info("applying workload manifests")
 	err = execCmdToStdout(exec.Command("knictl", "apply_workloads", site))
 	if err != nil {
-		return err
+		return fmt.Errorf("apply workloads failed: %v", err)
 	}
 	klog.Info("workload manifests deployed")
 	return nil
@@ -123,7 +123,7 @@ func execCreateIgnitionConfigsCmd(_ *cobra.Command, _ []string) {
 	klog.Info("creating ignition-configs")
 	err := execCmdToStdout(exec.Command(ocpInstaller, "create", "ignition-configs", "--log-level", logLvl, "--dir", siteBuildDir))
 	if err != nil {
-		klog.Fatalf("exec error: %v", err)
+		klog.Fatalf("create ignition configs failed: %v", err)
 	}
 	klog.Info("ignition-configs creation complete")
 }
@@ -137,7 +137,7 @@ func execCmdToStdout(command *exec.Cmd) error {
 	command.Stderr = os.Stderr
 	err := command.Start()
 	if err != nil {
-		return fmt.Errorf("exec failed: %v", err)
+		return fmt.Errorf("command failed: %v", err)
 	}
 	return command.Wait()
 }

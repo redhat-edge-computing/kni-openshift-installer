@@ -16,6 +16,7 @@ limitations under the License.
 package cmd
 
 import (
+	"fmt"
 	"github.com/spf13/cobra"
 	"k8s.io/klog"
 	"os/exec"
@@ -34,16 +35,17 @@ var (
 	destroyClusterCmd = &cobra.Command{
 		Use:   "cluster",
 		Short: "A brief description of your command",
-		Run:   destroyCluster,
+		RunE:   destroyCluster,
 	}
 )
 
-func destroyCluster(_ *cobra.Command, _ []string) {
+func destroyCluster(_ *cobra.Command, _ []string) error {
 	klog.Info("tearing down site cluster")
 	err := execCmdToStdout(exec.Command(ocpInstaller, "destroy", "cluster", "--log-level=debug", "--dir", siteBuildDir))
 	if err != nil {
-		klog.Fatal("destroy cluster failed ")
+		return fmt.Errorf("destroy cluster failed: %v", err)
 	}
+	return nil
 }
 
 func init() {
