@@ -9,7 +9,7 @@ BIN_DIR="$ROOT/bin"
 BUILD_TARGET="$BIN_DIR/kni-install"
 
 IMAGE_FILE="$ROOT/build/Dockerfile"
-IMAGE_TAG="quay.io/jcope/kni-install"
+IMAGE_TAG="localhost/kni-install"
 
 go_build(){
   (

@@ -48,7 +48,7 @@ cp <pull-secret> $HOME/.kni
 docker run --rm \
 --mount type=bind,src=$HOME/.aws,dst=/root/.aws,readonly \
 --mount type=bind,src=$HOME/.kni,dst=/root/.kni 
-quay.io/jcope/kni-install create cluster --repo github.com/path/to/site
+localhost/kni-install create cluster --repo github.com/path/to/site
 ```
 
 ##### *Or* Create Ignition Configs
@@ -57,7 +57,7 @@ quay.io/jcope/kni-install create cluster --repo github.com/path/to/site
 docker run --rm \
 --mount type=bind,src=$HOME/.aws,dst=/root/.aws,readonly \
 --mount type=bind,src=$HOME/.kni,dst=/root/.kni \
-quay.io/jcope/kni-install create ignition-configs --repo github.com/path/to/site
+localhost/kni-install create ignition-configs --repo github.com/path/to/site
 ```
 
 ##### Tear down a cluster
@@ -66,7 +66,7 @@ quay.io/jcope/kni-install create ignition-configs --repo github.com/path/to/site
 docker run --rm \
 --mount type=bind,src=$HOME/.aws,dst=/root/.aws,readonly \
 --mount type=bind,src=$HOME/.kni,dst=/root/.kni \
-quay.io/jcope/kni-install destroy cluster --repo github.com/path/to/site
+localhost/kni-install destroy cluster --repo github.com/path/to/site
 ```
 
 ##### Baremetal Teardown
