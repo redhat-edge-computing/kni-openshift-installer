@@ -52,10 +52,12 @@ while [ ${#@} != 0 ]; do
       shift
       ;;
     "")
-      break
+      exit
       ;;
     *)
       echo "unknown arg: $1"
+      exit
+      ;;
   esac
 done
 
