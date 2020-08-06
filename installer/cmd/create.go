@@ -26,7 +26,7 @@ import (
 var (
 	createCmd = &cobra.Command{
 		Use:   "create",
-		Short: "A brief description of your command",
+		Short: "",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
@@ -35,8 +35,9 @@ var (
 
 	createClusterCmd = &cobra.Command{
 		Use:     "cluster",
-		Short:   "",
-		Long:    "",
+		Short:   "deploys a cluster per the specified site",
+		Long:    `Wraps multiple knictl command line executions to fetch requirements,
+prepare manifests, create the cluster, and apply workloads as defined in the specified site.`,
 		RunE:    execCreateCmd,
 		Args:    cobra.ExactArgs(0),
 		PreRunE: initCreateCommand,
@@ -44,8 +45,9 @@ var (
 
 	createIgnitionConfigsCmd = &cobra.Command{
 		Use:     "ignition-configs",
-		Short:   "",
-		Long:    "",
+		Short:   "prepares ignition config manifests for baremetal deployments. does not create a cluster",
+		Long:    `Wraps multiple knictl command line executions to fetch requirements,
+prepare manifests, create the ignition-configs to be used for baremetal deployments.`,
 		Run:     execCreateIgnitionConfigsCmd,
 		Args:    cobra.ExactArgs(0),
 		PreRunE: initCreateCommand,

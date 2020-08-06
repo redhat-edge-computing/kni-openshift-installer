@@ -15,8 +15,8 @@ go_build(){
   (
 #    set -x
     cd "$CODE_ROOT"
-    echo "compiling package: $(pwd)/..."
-    export GOOS=linux GOARCH=amd64
+    echo "compiling package: $(pwd)/... to $BUILD_TARGET"
+    export GOOS=$GOOS GOARCH=$GOARCH
     go build -o "$BIN_DIR/" ./...
   )
 }
@@ -35,8 +35,28 @@ docker_build(){
 main(){
   go_build
   BUILD_DIR="$(mktemp -d)"
-  docker_build
+
+  if [[ $BUILD_IMAGE == 1 ]]; then
+    docker_build
+  fi
+
   rm -rf "$BUILD_DIR"
 }
+
+while [ ${#@} != 0 ]; do
+  case $1 in
+    "--image"|"-i")
+      BUILD_IMAGE=1
+      GOOS=linux
+      GOARCH=amd64
+      shift
+      ;;
+    "")
+      break
+      ;;
+    *)
+      echo "unknown arg: $1"
+  esac
+done
 
 main
