@@ -6,7 +6,7 @@ ROOT="$(readlink -f $(dirname ${BASH_SOURCE})/../)"
 CODE_ROOT="$ROOT/installer"
 
 BIN_DIR="$ROOT/bin"
-BUILD_TARGET="$BIN_DIR/installer"
+BUILD_TARGET="$BIN_DIR/kni-install"
 
 IMAGE_FILE="$ROOT/build/Dockerfile"
 IMAGE_TAG="quay.io/jcope/kni-install"
