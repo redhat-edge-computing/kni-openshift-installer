@@ -4,7 +4,7 @@ As the name states, this is a small app for wrapping `knictl` and `openshift-ins
 
 ## Dependencies
 
-- Docker, to build and run images
+- Docker
 
 ## Usage
 
