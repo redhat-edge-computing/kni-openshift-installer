@@ -66,7 +66,7 @@ func init() {
 
 	userHome, _ := os.UserHomeDir()
 
-	kniRoot := rootCmd.PersistentFlags().String("kni-dir", filepath.Join(userHome, ".kni"), `(optional) Sets path to non-standard .kni path`)
+	kniRoot := rootCmd.PersistentFlags().String("kni-dir", filepath.Join(userHome, ".kni"), `(optional) Sets path to non-standard .kni path, useful for running the app outside of a containerized env.`)
 	rootCmd.PersistentFlags().StringVar(&siteRepo, "repo", "", `git repo path containing site config files`)
 	rootCmd.PersistentFlags().BoolVar(&isDryRun, "dry-run", false, `(optional) If true, prints, but does not execute OS commands.`)
 	rootCmd.PersistentFlags().StringVar(&logLvl, "log-level", "info", `Set log level of detail. Accepted input is one of: ["info", "debug"]`)

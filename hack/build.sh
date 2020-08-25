@@ -21,7 +21,7 @@ CODE_ROOT="$ROOT/kni-install"
 BUILD_TARGET="$ROOT/bin/kni-install"
 
 (
-  set -x
+#  set -x
   cd "$ROOT"
   go build -o "$BUILD_TARGET" "$CODE_ROOT/main.go"
 )
