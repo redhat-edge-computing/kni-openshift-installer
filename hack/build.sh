@@ -23,5 +23,5 @@ BUILD_TARGET="$ROOT/bin/kni-install"
 (
 #  set -x
   cd "$ROOT"
-  go build -o "$BUILD_TARGET" "$CODE_ROOT/main.go"
+  go build -o "$BUILD_TARGET" "$CODE_ROOT"
 )

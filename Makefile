@@ -15,9 +15,8 @@
 TAG = "localhost/kni-install"
 BRANCH ?= "master"
 
+.PHONY: all build
 all: build
 
-.PHONY: build
 build:
-	docker build --build-arg "GIT_BRANCH=$(BRANCH)" --no-cache -t "$(TAG)" ./build/
-
+	docker build -t "$(TAG)" -f build/Dockerfile .
