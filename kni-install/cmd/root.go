@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"k8s.io/klog"
 	"os"
 	"path"
 	"path/filepath"
@@ -30,16 +29,7 @@ var cfgFile string
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "kni-install",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	RunE: func(cmd *cobra.Command, _ []string) error {
-		return cmd.Help()
-	},
+	RunE: rootCmdFunc,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -51,14 +41,23 @@ func Execute() {
 	}
 }
 
+// rootCmdFunc pre-configures system dependency locations prior to create() and destroy() calls
+func rootCmdFunc(cmd *cobra.Command, _ []string) error {
+	site = path.Base(siteRepo)
+	siteBuildDir = filepath.Join(kniRoot, site, "final_manifests")
+	ocpInstaller = filepath.Join(kniRoot, site, "requirements", "openshift-install")
+	return cmd.Help()
+}
+
 var (
-	isDryRun     bool
-	isBareCluster  bool
-	logLvl       string
-	site         string
-	siteRepo     string
-	siteBuildDir string
-	ocpInstaller string
+	isDryRun      bool
+	isBareCluster bool
+	kniRoot       string
+	logLvl        string
+	site          string
+	siteRepo      string
+	siteBuildDir  string
+	ocpInstaller  string
 )
 
 func init() {
@@ -66,20 +65,12 @@ func init() {
 
 	userHome, _ := os.UserHomeDir()
 
-	kniRoot := rootCmd.PersistentFlags().String("kni-dir", filepath.Join(userHome, ".kni"), `(optional) Sets path to non-standard .kni path, useful for running the app outside of a containerized env.`)
+	rootCmd.PersistentFlags().StringVar(&kniRoot, "kni-dir", filepath.Join(userHome, ".kni"), `(optional) Sets path to non-standard .kni path, useful for running the app outside of a containerized env.`)
 	rootCmd.PersistentFlags().StringVar(&siteRepo, "repo", "", `git repo path containing site config files`)
 	rootCmd.PersistentFlags().BoolVar(&isDryRun, "dry-run", false, `(optional) If true, prints, but does not execute OS commands.`)
 	rootCmd.PersistentFlags().StringVar(&logLvl, "log-level", "info", `Set log level of detail. Accepted input is one of: ["info", "debug"]`)
 	rootCmd.PersistentFlags().BoolVar(&isBareCluster, "bare-cluster", false, "when true, complete cluster deployment and stop, do no deploy workload.")
 	_ = rootCmd.PersistentFlags().Parse(os.Args[1:])
-
-	_, err := os.Stat(*kniRoot)
-	if err != nil {
-		klog.Fatalf("stat failed for dir %q: %v", *kniRoot, err)
-	}
-	site = path.Base(siteRepo)
-	siteBuildDir = filepath.Join(*kniRoot, site, "final_manifests")
-	ocpInstaller = filepath.Join(*kniRoot, site, "requirements", "openshift-install")
 }
 
 // initConfig reads in config file and ENV variables if set.

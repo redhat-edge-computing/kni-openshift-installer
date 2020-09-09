@@ -15,6 +15,8 @@
 # Build kni-openshift-installer
 FROM registry.redhat.io/ubi8/go-toolset:1.13.4 AS KNI_OPENSHIFT_INSTALL
 
+LABEL KNI_BUILDER=true
+
 ENV \
 GOPATH="/opt/app-root" \
 APP_FOLDER="/opt/app-root/src/kni-openshift-installer"
@@ -30,15 +32,17 @@ RUN ./hack/build.sh
 # Build knictl
 FROM registry.redhat.io/ubi8/go-toolset:1.13.4 AS KNICTL
 
+LABEL KNI_BUILDER=true
+
 ENV \
 GOPATH="/opt/app-root" \
-PROJECT_PATH="$/opt/app-root/src/gerrit.akraino.org/kni/installer"
+PROJECT_PATH="/opt/app-root/src/gerrit.akraino.org/kni/installer"
 
-RUN \
-mkdir -p "$PROJECT_PATH" && \
-cd "$PROJECT_PATH" && \
-git clone "https://gerrit.akraino.org/r/kni/installer" . && \
-make build
+RUN mkdir -p "$PROJECT_PATH"
+
+WORKDIR "$PROJECT_PATH"
+
+RUN git clone "https://gerrit.akraino.org/r/kni/installer" . && make build
 
 # Build container image
 FROM registry.redhat.io/ubi8/ubi-minimal:8.2
@@ -48,8 +52,9 @@ ENV PLUGIN_FOLDER="/usr/bin/plugins/kustomize/plugin/kni.akraino.org/v1alpha1/si
 RUN mkdir -p "$PLUGIN_FOLDER"
 
 COPY --from=KNICTL /opt/app-root/src/gerrit.akraino.org/kni/installer/knictl /usr/bin/knictl
+
 COPY --from=KNICTL /opt/app-root/src/gerrit.akraino.org/kni/installer/plugins/kustomize/plugin/kni.akraino.org/v1alpha1/siteconfig/SiteConfig "$PLUGIN_FOLDER/"
-# binary retains previous container user id, chown to this container user
+
 COPY --from=KNI_OPENSHIFT_INSTALL /opt/app-root/src/kni-openshift-installer/bin/kni-install /usr/bin/
 
 RUN chmod +x /usr/bin/kni-install
