@@ -32,6 +32,11 @@ var rootCmd = &cobra.Command{
 	RunE: rootCmdFunc,
 }
 
+// rootCmdFunc pre-configures system dependency locations prior to create() and destroy() calls
+func rootCmdFunc(cmd *cobra.Command, _ []string) error {
+	return cmd.Help()
+}
+
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
@@ -39,14 +44,6 @@ func Execute() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-}
-
-// rootCmdFunc pre-configures system dependency locations prior to create() and destroy() calls
-func rootCmdFunc(cmd *cobra.Command, _ []string) error {
-	site = path.Base(siteRepo)
-	siteBuildDir = filepath.Join(kniRoot, site, "final_manifests")
-	ocpInstaller = filepath.Join(kniRoot, site, "requirements", "openshift-install")
-	return cmd.Help()
 }
 
 var (
@@ -70,7 +67,13 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&isDryRun, "dry-run", false, `(optional) If true, prints, but does not execute OS commands.`)
 	rootCmd.PersistentFlags().StringVar(&logLvl, "log-level", "info", `Set log level of detail. Accepted input is one of: ["info", "debug"]`)
 	rootCmd.PersistentFlags().BoolVar(&isBareCluster, "bare-cluster", false, "when true, complete cluster deployment and stop, do no deploy workload.")
+
 	_ = rootCmd.PersistentFlags().Parse(os.Args[1:])
+
+	site = path.Base(siteRepo)
+	siteBuildDir = filepath.Join(kniRoot, site, "final_manifests")
+	ocpInstaller = filepath.Join(kniRoot, site, "requirements", "openshift-install")
+
 }
 
 // initConfig reads in config file and ENV variables if set.
