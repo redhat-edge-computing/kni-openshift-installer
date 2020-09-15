@@ -31,12 +31,13 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
 		},
+		PersistentPreRunE: subCmdPreConfig,
 	}
 
 	createClusterCmd = &cobra.Command{
-		Use:     "cluster",
-		Short:   "deploys a cluster per the specified site",
-		Long:    `Wraps multiple knictl command line executions to fetch requirements,
+		Use:   "cluster",
+		Short: "deploys a cluster per the specified site",
+		Long: `Wraps multiple knictl command line executions to fetch requirements,
 prepare manifests, create the cluster, and apply workloads as defined in the specified site.`,
 		RunE:    execCreateCmd,
 		Args:    cobra.ExactArgs(0),
@@ -44,9 +45,9 @@ prepare manifests, create the cluster, and apply workloads as defined in the spe
 	}
 
 	createIgnitionConfigsCmd = &cobra.Command{
-		Use:     "ignition-configs",
-		Short:   "prepares ignition config manifests for baremetal deployments. does not create a cluster",
-		Long:    `Wraps multiple knictl command line executions to fetch requirements,
+		Use:   "ignition-configs",
+		Short: "prepares ignition config manifests for baremetal deployments. does not create a cluster",
+		Long: `Wraps multiple knictl command line executions to fetch requirements,
 prepare manifests, create the ignition-configs to be used for baremetal deployments.`,
 		Run:     execCreateIgnitionConfigsCmd,
 		Args:    cobra.ExactArgs(0),
@@ -69,7 +70,7 @@ func initCreateCommand(_ *cobra.Command, _ []string) error {
 
 func fetchRequirements() error {
 	klog.Info("fetching site requirements")
-	err := execCmdToStdout(exec.Command("knictl", "fetch_requirements", siteRepo))
+	err := execCmdToStdout(exec.Command("knictl", "fetch_requirements", rootOpts.siteRepo))
 	if err != nil {
 		return fmt.Errorf("fetching requirements failed: %v", err)
 	}
@@ -79,7 +80,7 @@ func fetchRequirements() error {
 
 func prepareManifests() error {
 	klog.Info("preparing manifests")
-	err := execCmdToStdout(exec.Command("knictl", "prepare_manifests", site))
+	err := execCmdToStdout(exec.Command("knictl", "prepare_manifests", site()))
 	if err != nil {
 		return fmt.Errorf("manifest preparation failed: %v", err)
 	}
@@ -93,7 +94,7 @@ func execCreateCmd(_ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	if ! isBareCluster{
+	if ! rootOpts.isBareCluster {
 		err = applyWorkloads()
 		if err != nil {
 			return err
@@ -104,7 +105,7 @@ func execCreateCmd(_ *cobra.Command, _ []string) error {
 
 func createCluster() (err error) {
 	klog.Info("deploy cluster")
-	err = execCmdToStdout(exec.Command(ocpInstaller, "create", "cluster", "--log-level", logLvl, "--dir", siteBuildDir))
+	err = execCmdToStdout(exec.Command(installer(), "create", "cluster", "--log-level", rootOpts.logLvl, "--dir", manifestDir()))
 	if err != nil {
 		return fmt.Errorf("cluster deployment failed: %v", err)
 	}
@@ -114,7 +115,7 @@ func createCluster() (err error) {
 
 func applyWorkloads() (err error) {
 	klog.Info("applying workload manifests")
-	err = execCmdToStdout(exec.Command("knictl", "apply_workloads", site))
+	err = execCmdToStdout(exec.Command("knictl", "apply_workloads", site()))
 	if err != nil {
 		return fmt.Errorf("apply workloads failed: %v", err)
 	}
@@ -124,7 +125,7 @@ func applyWorkloads() (err error) {
 
 func execCreateIgnitionConfigsCmd(_ *cobra.Command, _ []string) {
 	klog.Info("creating ignition-configs")
-	err := execCmdToStdout(exec.Command(ocpInstaller, "create", "ignition-configs", "--log-level", logLvl, "--dir", siteBuildDir))
+	err := execCmdToStdout(exec.Command(installer(), "create", "ignition-configs", "--log-level", rootOpts.logLvl, "--dir", manifestDir()))
 	if err != nil {
 		klog.Fatalf("create ignition configs failed: %v", err)
 	}
@@ -132,7 +133,7 @@ func execCreateIgnitionConfigsCmd(_ *cobra.Command, _ []string) {
 }
 
 func execCmdToStdout(command *exec.Cmd) error {
-	if isDryRun {
+	if rootOpts.isDryRun {
 		klog.Infof("dry-run exec: %s", command.String())
 		return nil
 	}

@@ -20,7 +20,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"os"
-	"path"
 	"path/filepath"
 )
 
@@ -28,7 +27,7 @@ var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "kni-install",
+	Use:  "kni-install",
 	RunE: rootCmdFunc,
 }
 
@@ -46,34 +45,26 @@ func Execute() {
 	}
 }
 
-var (
-	isDryRun      bool
+var rootOpts = struct {
 	isBareCluster bool
+	isDryRun      bool
 	kniRoot       string
 	logLvl        string
-	site          string
 	siteRepo      string
-	siteBuildDir  string
-	ocpInstaller  string
-)
+}{}
+
+const flagSiteRepo = "site-repo"
 
 func init() {
 	cobra.OnInitialize(initConfig)
 
 	userHome, _ := os.UserHomeDir()
 
-	rootCmd.PersistentFlags().StringVar(&kniRoot, "kni-dir", filepath.Join(userHome, ".kni"), `(optional) Sets path to non-standard .kni path, useful for running the app outside of a containerized env.`)
-	rootCmd.PersistentFlags().StringVar(&siteRepo, "repo", "", `git repo path containing site config files`)
-	rootCmd.PersistentFlags().BoolVar(&isDryRun, "dry-run", false, `(optional) If true, prints, but does not execute OS commands.`)
-	rootCmd.PersistentFlags().StringVar(&logLvl, "log-level", "info", `Set log level of detail. Accepted input is one of: ["info", "debug"]`)
-	rootCmd.PersistentFlags().BoolVar(&isBareCluster, "bare-cluster", false, "when true, complete cluster deployment and stop, do no deploy workload.")
-
-	_ = rootCmd.PersistentFlags().Parse(os.Args[1:])
-
-	site = path.Base(siteRepo)
-	siteBuildDir = filepath.Join(kniRoot, site, "final_manifests")
-	ocpInstaller = filepath.Join(kniRoot, site, "requirements", "openshift-install")
-
+	rootCmd.PersistentFlags().StringVar(&rootOpts.kniRoot, "kni-dir", filepath.Join(userHome, ".kni"), `(optional) Sets path to non-standard .kni path, useful for running the app outside of a containerized env.`)
+	rootCmd.PersistentFlags().StringVar(&rootOpts.siteRepo, flagSiteRepo, "", `URI specifying path to site configs (e.g. github.com/path/to/site) (required)`)
+	rootCmd.PersistentFlags().BoolVar(&rootOpts.isDryRun, "dry-run", false, `If true, prints but does not execute OS commands.`)
+	rootCmd.PersistentFlags().StringVar(&rootOpts.logLvl, "log-level", "info", `Set log level of detail. Accepted input is one of: [debug | info | warn | error]`)
+	rootCmd.PersistentFlags().BoolVar(&rootOpts.isBareCluster, "bare-cluster", false, "when true, complete cluster deployment and stop, do no deploy workload.")
 }
 
 // initConfig reads in config file and ENV variables if set.

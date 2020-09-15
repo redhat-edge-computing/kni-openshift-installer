@@ -30,18 +30,19 @@ var (
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return cmd.Help()
 		},
+		PersistentPreRunE: subCmdPreConfig,
 	}
 
 	destroyClusterCmd = &cobra.Command{
 		Use:   "cluster",
 		Short: "A brief description of your command",
-		RunE:   destroyCluster,
+		RunE:  destroyCluster,
 	}
 )
 
 func destroyCluster(_ *cobra.Command, _ []string) error {
 	klog.Info("tearing down site cluster")
-	err := execCmdToStdout(exec.Command(ocpInstaller, "destroy", "cluster", "--log-level=debug", "--dir", siteBuildDir))
+	err := execCmdToStdout(exec.Command(installer(), "destroy", "cluster", "--log-level=debug", "--dir", manifestDir()))
 	if err != nil {
 		return fmt.Errorf("destroy cluster failed: %v", err)
 	}
