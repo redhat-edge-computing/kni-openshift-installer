@@ -49,7 +49,7 @@ prepare manifests, create the cluster, and apply workloads as defined in the spe
 		Short: "prepares ignition config manifests for baremetal deployments. does not create a cluster",
 		Long: `Wraps multiple knictl command line executions to fetch requirements,
 prepare manifests, create the ignition-configs to be used for baremetal deployments.`,
-		Run:     execCreateIgnitionConfigsCmd,
+		RunE:     execCreateIgnitionConfigsCmd,
 		Args:    cobra.ExactArgs(0),
 		PreRunE: initCreateCommand,
 	}
@@ -117,19 +117,20 @@ func applyWorkloads() (err error) {
 	klog.Info("applying workload manifests")
 	err = execCmdToStdout(exec.Command("knictl", "apply_workloads", site()))
 	if err != nil {
-		return fmt.Errorf("apply workloads failed: %v", err)
+		return fmt.Errorf("apply workloads failed: %s", err)
 	}
 	klog.Info("workload manifests deployed")
 	return nil
 }
 
-func execCreateIgnitionConfigsCmd(_ *cobra.Command, _ []string) {
+func execCreateIgnitionConfigsCmd(_ *cobra.Command, _ []string) error {
 	klog.Info("creating ignition-configs")
 	err := execCmdToStdout(exec.Command(installer(), "create", "ignition-configs", "--log-level", rootOpts.logLvl, "--dir", manifestDir()))
 	if err != nil {
-		klog.Fatalf("create ignition configs failed: %v", err)
+		return fmt.Errorf("create ignition configs failed: %v", err)
 	}
 	klog.Info("ignition-configs creation complete")
+	return nil
 }
 
 func execCmdToStdout(command *exec.Cmd) error {
