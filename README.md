@@ -51,7 +51,7 @@ make BRANCH=<git ref>
 ```bash
 docker run --rm \
 --mount type=bind,src=$HOME/.aws,dst=/root/.aws,readonly \
---mount type=bind,src=$HOME/.kni,dst=/root/.kni 
+--mount type=bind,src=$HOME/.kni,dst=/root/.kni \
 localhost/kni-install create cluster --repo github.com/path/to/site
 ```
 
