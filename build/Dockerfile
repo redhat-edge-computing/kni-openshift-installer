@@ -51,7 +51,7 @@ ENV PLUGIN_FOLDER="/usr/bin/plugins/kustomize/plugin/kni.akraino.org/v1alpha1/si
 
 RUN mkdir -p "$PLUGIN_FOLDER"
 
-COPY --from=KNICTL /opt/app-root/src/gerrit.akraino.org/kni/installer/knictl /usr/bin/knictl
+COPY --from=KNICTL /opt/app-root/src/gerrit.akraino.org/kni/installer/bin/knictl /usr/bin/knictl
 
 COPY --from=KNICTL /opt/app-root/src/gerrit.akraino.org/kni/installer/plugins/kustomize/plugin/kni.akraino.org/v1alpha1/siteconfig/SiteConfig "$PLUGIN_FOLDER/"
 
