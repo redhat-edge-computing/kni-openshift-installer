@@ -17,20 +17,17 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
-	"k8s.io/klog"
 	"os"
 	"os/exec"
+
+	"k8s.io/klog"
+
+	"github.com/spf13/cobra"
 )
 
 var (
 	createCmd = &cobra.Command{
-		Use:   "create",
-		Short: "",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return cmd.Help()
-		},
+		Use: "create",
 	}
 
 	createClusterCmd = &cobra.Command{
@@ -38,8 +35,11 @@ var (
 		Short: "deploys a cluster per the specified site",
 		Long: `Wraps multiple knictl command line executions to fetch requirements,
 prepare manifests, create the cluster, and apply workloads as defined in the specified site.`,
-		RunE:    execCreateCmd,
-		Args:    cobra.ExactArgs(0),
+		RunE: execCreateCmd,
+		Args: cobra.ExactArgs(0),
+		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
+			return verifyRequiredFlags(cmd)
+		},
 		PreRunE: initCreateCommand,
 	}
 
@@ -48,13 +48,19 @@ prepare manifests, create the cluster, and apply workloads as defined in the spe
 		Short: "prepares ignition config manifests for baremetal deployments. does not create a cluster",
 		Long: `Wraps multiple knictl command line executions to fetch requirements,
 prepare manifests, create the ignition-configs to be used for baremetal deployments.`,
-		RunE:     execCreateIgnitionConfigsCmd,
-		Args:    cobra.ExactArgs(0),
+		RunE: execCreateIgnitionConfigsCmd,
+		Args: cobra.ExactArgs(0),
+		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
+			return verifyRequiredFlags(cmd)
+		},
 		PreRunE: initCreateCommand,
 	}
 )
 
 func initCreateCommand(_ *cobra.Command, _ []string) error {
+
+	klog.Infof("preparing to deploy blueprint %q", rootOpts.siteRepo)
+
 	err := fetchRequirements()
 	if err != nil {
 		return err
@@ -93,7 +99,7 @@ func execCreateCmd(_ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	if ! rootOpts.isBareCluster {
+	if !rootOpts.isBareCluster {
 		err = applyWorkloads()
 		if err != nil {
 			return err
@@ -147,6 +153,7 @@ func execCmdToStdout(command *exec.Cmd) error {
 }
 
 func init() {
+
 	createCmd.AddCommand(createClusterCmd)
 	createCmd.AddCommand(createIgnitionConfigsCmd)
 	rootCmd.AddCommand(createCmd)

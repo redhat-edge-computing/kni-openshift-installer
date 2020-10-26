@@ -17,29 +17,35 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
-	"k8s.io/klog"
 	"os/exec"
+
+	"k8s.io/klog"
+
+	"github.com/spf13/cobra"
 )
 
 // destroyCmd represents the destroy command
 var (
 	destroyCmd = &cobra.Command{
 		Use:   "destroy",
-		Short: "A brief description of your command",
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			return cmd.Help()
-		},
+		Short: "this command does not do anything on its own.  you must call the cluster" +
+			"subcommand in order to target a cluster for tear down",
 	}
 
 	destroyClusterCmd = &cobra.Command{
 		Use:   "cluster",
-		Short: "A brief description of your command",
+		Short: "tear down the cluster associated with the given site",
+		Long: "wraps openshift-install to completely tear down the cluster" +
+			"deployed from the blueprint for the given site",
+		PreRunE: func(cmd *cobra.Command, _ []string) error {
+			return verifyRequiredFlags(cmd)
+		},
 		RunE:  destroyCluster,
 	}
 )
 
-func destroyCluster(_ *cobra.Command, _ []string) error {
+func destroyCluster(cmd *cobra.Command, _ []string) error {
+
 	klog.Info("tearing down site cluster")
 	err := execCmdToStdout(exec.Command(installer(), "destroy", "cluster", "--log-level=debug", "--dir", manifestDir()))
 	if err != nil {

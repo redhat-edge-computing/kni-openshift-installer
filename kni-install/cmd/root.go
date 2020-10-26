@@ -17,11 +17,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
 	"path"
 	"path/filepath"
-)
 
 	"github.com/spf13/cobra"
 )
@@ -29,19 +27,15 @@ import (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:  "kni-install",
-	RunE: rootCmdFunc,
-}
-
-// rootCmdFunc pre-configures system dependency locations prior to create() and destroy() calls
-func rootCmdFunc(cmd *cobra.Command, _ []string) error {
-	return cmd.Help()
+	Short: "Push button tool for deploying cluster stacks from blueprints",
+	Long: "kni-install wraps knictl and openshift-install binaries and executes them" +
+		"sequentially, given a blueprint path.",
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
 		os.Exit(1)
 	}
 }
@@ -69,6 +63,14 @@ func manifestDir() string {
 var rootOpts = new(opts)
 
 const flagSiteRepo = "site-repo"
+
+func verifyRequiredFlags(cmd *cobra.Command) error {
+	f := cmd.Flags().Lookup(flagSiteRepo)
+	if f == nil || !f.Changed {
+		return fmt.Errorf("required flag %q not set", flagSiteRepo)
+	}
+	return nil
+}
 
 func init() {
 
