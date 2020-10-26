@@ -18,13 +18,13 @@ package cmd
 import (
 	"fmt"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"os"
 	"path"
 	"path/filepath"
 )
 
-var cfgFile string
+	"github.com/spf13/cobra"
+)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -71,7 +71,6 @@ var rootOpts = new(opts)
 const flagSiteRepo = "site-repo"
 
 func init() {
-	cobra.OnInitialize(initConfig)
 
 	userHome, _ := os.UserHomeDir()
 
@@ -80,30 +79,4 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&rootOpts.isDryRun, "dry-run", false, `If true, prints but does not execute OS commands.`)
 	rootCmd.PersistentFlags().StringVar(&rootOpts.logLvl, "log-level", "info", `Set log level of detail. Accepted input is one of: [debug | info | warn | error]`)
 	rootCmd.PersistentFlags().BoolVar(&rootOpts.isBareCluster, "bare-cluster", false, "when true, complete cluster deployment and stop, do no deploy workload.")
-}
-
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		// Find home directory.
-		home, err := os.UserHomeDir()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		// Search config in home directory with name ".kni-openshift-installer" (without extension).
-		viper.AddConfigPath(home)
-		viper.SetConfigName(".kni-openshift-kni-install")
-	}
-
-	viper.AutomaticEnv() // read in environment variables that match
-
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
-	}
 }
