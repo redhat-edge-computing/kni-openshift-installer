@@ -13,13 +13,17 @@
 # limitations under the License.
 
 TAG = localhost/kni-install
-
+RELEASE_TAG = quay.io/redhat-edge-computing/kni-install
 .PHONY: all build
 all: build
 
 build:
 	docker build -t "$(TAG)" -f build/Dockerfile .
 
+.PHONY: release
+release: build
+	docker tag $(TAG) $(RELEASE_TAG)
+	docker push $(RELEASE_TAG)
 
 # clean destroys the intermediate build images which consume a couple Gb of space in total.  It does not
 # delete the app image or the base build images.
