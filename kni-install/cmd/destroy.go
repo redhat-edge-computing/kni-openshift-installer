@@ -30,7 +30,6 @@ var (
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return cmd.Help()
 		},
-		PersistentPreRunE: subCmdPreConfig,
 	}
 
 	destroyClusterCmd = &cobra.Command{

@@ -31,7 +31,6 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
 		},
-		PersistentPreRunE: subCmdPreConfig,
 	}
 
 	createClusterCmd = &cobra.Command{
@@ -80,7 +79,7 @@ func fetchRequirements() error {
 
 func prepareManifests() error {
 	klog.Info("preparing manifests")
-	err := execCmdToStdout(exec.Command("knictl", "prepare_manifests", site()))
+	err := execCmdToStdout(exec.Command("knictl", "prepare_manifests", rootOpts.site()))
 	if err != nil {
 		return fmt.Errorf("manifest preparation failed: %v", err)
 	}
@@ -115,7 +114,7 @@ func createCluster() (err error) {
 
 func applyWorkloads() (err error) {
 	klog.Info("applying workload manifests")
-	err = execCmdToStdout(exec.Command("knictl", "apply_workloads", site()))
+	err = execCmdToStdout(exec.Command("knictl", "apply_workloads", rootOpts.site()))
 	if err != nil {
 		return fmt.Errorf("apply workloads failed: %s", err)
 	}

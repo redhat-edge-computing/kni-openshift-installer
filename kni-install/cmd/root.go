@@ -20,6 +20,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"os"
+	"path"
 	"path/filepath"
 )
 
@@ -45,13 +46,27 @@ func Execute() {
 	}
 }
 
-var rootOpts = struct {
+type opts struct {
 	isBareCluster bool
 	isDryRun      bool
 	kniRoot       string
 	logLvl        string
 	siteRepo      string
-}{}
+}
+
+func (o opts) site() string {
+	return path.Base(rootOpts.siteRepo)
+}
+
+func installer() string {
+	return filepath.Join(rootOpts.kniRoot, rootOpts.site(), "requirements", "openshift-install")
+}
+
+func manifestDir() string {
+	return filepath.Join(rootOpts.kniRoot, rootOpts.site(), "final_manifests")
+}
+
+var rootOpts = new(opts)
 
 const flagSiteRepo = "site-repo"
 
