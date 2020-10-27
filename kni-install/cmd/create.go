@@ -55,6 +55,15 @@ prepare manifests, create the ignition-configs to be used for baremetal deployme
 		},
 		PreRunE: initCreateCommand,
 	}
+
+	createWorkloadsCmd = &cobra.Command{
+		Use: "workloads",
+		Short: "",
+		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
+			return verifyRequiredFlags(cmd)
+		},
+		RunE:execCreateManifestsCmd,
+	}
 )
 
 func initCreateCommand(_ *cobra.Command, _ []string) error {
@@ -73,9 +82,11 @@ func initCreateCommand(_ *cobra.Command, _ []string) error {
 	return nil
 }
 
+const knictl = `knictl`
+
 func fetchRequirements() error {
 	klog.Info("fetching site requirements")
-	err := execCmdToStdout(exec.Command("knictl", "fetch_requirements", rootOpts.siteRepo))
+	err := execCmdToStdout(exec.Command(knictl, "fetch_requirements", rootOpts.siteRepo))
 	if err != nil {
 		return fmt.Errorf("fetching requirements failed: %v", err)
 	}
@@ -85,7 +96,7 @@ func fetchRequirements() error {
 
 func prepareManifests() error {
 	klog.Info("preparing manifests")
-	err := execCmdToStdout(exec.Command("knictl", "prepare_manifests", rootOpts.site()))
+	err := execCmdToStdout(exec.Command(knictl, "prepare_manifests", rootOpts.site()))
 	if err != nil {
 		return fmt.Errorf("manifest preparation failed: %v", err)
 	}
@@ -120,11 +131,11 @@ func createCluster() (err error) {
 
 func applyWorkloads() (err error) {
 	klog.Info("applying workload manifests")
-	err = execCmdToStdout(exec.Command("knictl", "apply_workloads", rootOpts.site()))
+	err = execCmdToStdout(exec.Command(knictl, "apply_workloads", rootOpts.site()))
 	if err != nil {
 		return fmt.Errorf("apply workloads failed: %s", err)
 	}
-	klog.Info("workload manifests deployed")
+	klog.Info("done applying workloads")
 	return nil
 }
 
@@ -136,6 +147,10 @@ func execCreateIgnitionConfigsCmd(_ *cobra.Command, _ []string) error {
 	}
 	klog.Info("ignition-configs creation complete")
 	return nil
+}
+
+func execCreateManifestsCmd(_ *cobra.Command, _ []string) error {
+	return applyWorkloads()
 }
 
 func execCmdToStdout(command *exec.Cmd) error {
@@ -156,5 +171,6 @@ func init() {
 
 	createCmd.AddCommand(createClusterCmd)
 	createCmd.AddCommand(createIgnitionConfigsCmd)
+	createCmd.AddCommand(createWorkloadsCmd)
 	rootCmd.AddCommand(createCmd)
 }

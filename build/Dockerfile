@@ -47,13 +47,13 @@ RUN git clone "https://gerrit.akraino.org/r/kni/installer" . && make build
 # Build container image
 FROM registry.redhat.io/ubi8/ubi-minimal:8.2
 
-ENV PLUGIN_FOLDER="/usr/bin/plugins/kustomize/plugin/kni.akraino.org/v1alpha1/siteconfig"
+ARG PLUGIN_PATH="/usr/local/plugins/kustomize/plugin/kni.akraino.org/v1alpha1/siteconfig/"
 
-RUN mkdir -p "$PLUGIN_FOLDER"
+RUN mkdir -p "$PLUGIN_PATH"
 
-COPY --from=KNICTL /opt/app-root/src/gerrit.akraino.org/kni/installer/bin/knictl /usr/bin/knictl
+COPY --from=KNICTL /opt/app-root/src/gerrit.akraino.org/kni/installer/bin/knictl /usr/local/bin/knictl
 
-COPY --from=KNICTL /opt/app-root/src/gerrit.akraino.org/kni/installer/plugins/kustomize/plugin/kni.akraino.org/v1alpha1/siteconfig/SiteConfig "$PLUGIN_FOLDER/"
+COPY --from=KNICTL /opt/app-root/src/gerrit.akraino.org/kni/installer/plugins/kustomize/plugin/kni.akraino.org/v1alpha1/siteconfig/SiteConfig "$PLUGIN_PATH"
 
 COPY --from=KNI_OPENSHIFT_INSTALL /opt/app-root/src/kni-openshift-installer/bin/kni-install /usr/bin/
 
